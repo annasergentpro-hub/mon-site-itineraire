@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Design system — Route Compass
+   Thème sombre navigation. Toutes les couleurs en HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 40% 9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 40% 9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 190 95% 55%;
+    --primary-foreground: 222 47% 8%;
+    --primary-glow: 180 100% 70%;
+
+    --secondary: 217 33% 14%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217 33% 14%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 270 80% 65%;
+    --accent-foreground: 210 40% 98%;
+
+    --success: 150 80% 50%;
+    --warning: 35 95% 60%;
+
+    --destructive: 0 75% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 33% 18%;
+    --input: 217 33% 16%;
+    --ring: 190 95% 55%;
+
+    --radius: 0.875rem;
+
+    --gradient-primary: linear-gradient(135deg, hsl(190 95% 55%), hsl(180 100% 70%));
+    --gradient-accent: linear-gradient(135deg, hsl(270 80% 65%), hsl(190 95% 55%));
+    --gradient-surface: linear-gradient(180deg, hsl(222 40% 11%), hsl(222 40% 8%));
+    --gradient-hero: radial-gradient(ellipse at top, hsl(190 95% 55% / 0.18), transparent 60%),
+                     radial-gradient(ellipse at bottom, hsl(270 80% 65% / 0.12), transparent 60%);
+
+    --shadow-glow: 0 0 40px hsl(190 95% 55% / 0.35);
+    --shadow-card: 0 10px 30px -10px hsl(222 80% 2% / 0.6);
+    --shadow-elevated: 0 20px 50px -12px hsl(190 95% 55% / 0.25);
+
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html, body, #root {
+    @apply min-h-screen;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-image: var(--gradient-hero);
+    background-attachment: fixed;
+  }
+}
+
+@layer utilities {
+  .glass {
+    background: hsl(222 40% 10% / 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid hsl(217 33% 22% / 0.6);
+  }
+
+  .text-gradient {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
+/* Gère l'inversion des tuiles de la carte quand le html a la classe .dark */
+.dark .map-tiles {
+  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+}
+
+/* S'assure que Leaflet ne gâche pas les bordures arrondies de ton design Premium */
+.leaflet-container {
+  border-radius: inherit;
+  font-family: inherit;
+}
