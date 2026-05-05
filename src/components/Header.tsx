@@ -97,7 +97,7 @@ export const Header = () => {
               variant="ghost"
               size="icon"
               onClick={toggleTheme}
-              className="rounded-full transition-all ml-1
+              className="rounded-full transition-all ml-2
                 h-7 w-7               /* Mobile */
                 md:h-10 md:w-10       /* Tablette */
                 lg:h-12 lg:w-12       /* Desktop */
