@@ -517,9 +517,7 @@ const canCompute = isVisible && noErrors && !loading;
                     <p className="text-[11px] text-slate-500">Lead Developer & UI Designer</p>
                   </div>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 italic flex items-center gap-2">
-                  <ShieldCheck className="h-3 w-3" /> Tous droits réservés © {new Date().getFullYear()}
-                </p>
+                
               </div>
             </div>
 
@@ -559,6 +557,9 @@ const canCompute = isVisible && noErrors && !loading;
               <a href="#" className="hover:text-slate-900 dark:hover:text-white transition-colors">Confidentialité</a>
               <a href="#" className="hover:text-slate-900 dark:hover:text-white transition-colors">Mentions Légales</a>
             </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 italic flex items-center gap-2">
+                  <ShieldCheck className="h-3 w-3" /> Tous droits réservés © {new Date().getFullYear()}
+                </p>
           </div>
         </div>
       </footer>
