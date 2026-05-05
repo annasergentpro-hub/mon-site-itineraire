@@ -98,3 +98,9 @@
   border-radius: inherit;
   font-family: inherit;
 }
+/* Empêche le zoom auto sur mobile qui cause souvent le décalage de l'input */
+@media screen and (max-width: 768px) {
+  input, textarea {
+    font-size: 16px !important;
+  }
+}
