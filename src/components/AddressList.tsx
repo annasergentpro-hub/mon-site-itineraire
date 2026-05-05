@@ -266,7 +266,21 @@ export const AddressList = ({
 
   const validationCacheRef = useRef<Record<string, boolean>>({});
   const prevAddressesRef = useRef<string[]>([]);
-
+  const LimitReachedAlert = ({ max }: { max: number }) => (
+  <div className="mt-4 flex items-start gap-3 rounded-2xl border border-orange-200/50 bg-orange-50/50 p-4 dark:border-orange-900/30 dark:bg-orange-900/10 animate-in fade-in slide-in-from-top-2 duration-500">
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-500 shadow-lg shadow-orange-500/20">
+      <AlertCircle className="h-5 w-5 text-white" />
+    </div>
+    <div className="space-y-1">
+      <p className="text-sm font-bold text-orange-800 dark:text-orange-300">
+        Capacité maximale atteinte
+      </p>
+      <p className="text-[11px] leading-relaxed text-orange-700/80 dark:text-orange-400/80 uppercase tracking-wide font-medium">
+        Vous avez atteint la limite de **{max} adresses**. Veuillez en supprimer pour en ajouter de nouvelles.
+      </p>
+    </div>
+  </div>
+);
   // ✅ FIX 2 : Placeholder dynamique selon la langue — mis à jour à chaque changement de langue.
   // On prend la langue courante, ou "fr" par défaut si non trouvée dans la table.
   const bulkPlaceholder = BULK_PLACEHOLDERS[lang] ?? BULK_PLACEHOLDERS["fr"];
@@ -543,11 +557,7 @@ export const AddressList = ({
               <MapPinPlus className="h-12 w-12 text-white" />
             </Button>
           </div>
-          {atLimit && (
-            <p className="text-[10px] text-orange-500 font-bold mt-2 ml-1">
-              ⚠ Limite de {MAX_ADDRESSES} adresses atteinte.
-            </p>
-          )}
+          {atLimit && <LimitReachedAlert max={MAX_ADDRESSES} />}
         </TabsContent>
 
         <TabsContent value="bulk" className="mt-8 space-y-2 z-50">
@@ -560,11 +570,7 @@ export const AddressList = ({
             onPointerDown={(e) => e.stopPropagation()}
             className="rounded-2xl h-24 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 z-50"
           />
-          {atLimit && (
-            <p className="text-[10px] text-orange-500 font-bold ml-1">
-              ⚠ Limite de {MAX_ADDRESSES} adresses atteinte.
-            </p>
-          )}
+          {atLimit && <LimitReachedAlert max={MAX_ADDRESSES} />}
           <div className="w-full mt-6">
             <Button
               onClick={addBulk}
