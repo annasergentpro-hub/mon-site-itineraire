@@ -97,7 +97,7 @@ export const Header = () => {
               variant="ghost"
               size="icon"
               onClick={toggleTheme}
-              className="rounded-full transition-all ml-2
+              className="rounded-full transition-all 
                 h-7 w-7               /* Mobile */
                 md:h-10 md:w-10       /* Tablette */
                 lg:h-12 lg:w-12       /* Desktop */
@@ -105,9 +105,9 @@ export const Header = () => {
               aria-label="Basculer le thème"
             >
               {mounted && isDark ? (
-                <Sun className="h-2 w-2 md:h-5 md:w-5 lg:h-6 lg:w-6 ml-1 text-amber-500 transition-all" />
+                <Sun className="h-2 w-2 md:h-5 md:w-5 lg:h-6 lg:w-6 text-amber-500 transition-all" />
               ) : (
-                <Moon className="h-2 w-2 md:h-5 md:w-5 lg:h-6 lg:w-6 ml-1 text-indigo-600 transition-all" />
+                <Moon className="h-2 w-2 md:h-5 md:w-5 lg:h-6 lg:w-6 text-indigo-600 transition-all" />
               )}
             </Button>
           </div>
