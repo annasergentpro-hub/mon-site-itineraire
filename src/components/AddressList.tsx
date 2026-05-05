@@ -1,12 +1,3 @@
-// ============================================================
-// AddressList.tsx — Version sécurisée et corrigée v2
-// Fix 1 : constantes MAX_ADDRESSES / MAX_ADDRESS_LENGTH définies
-//         localement (plus de dépendance fragile à distances.ts).
-// Fix 2 : placeholder Textarea rendu via useTranslation + état
-//         pour que Google Translate le prenne bien en compte.
-// Fix 3 : useCallback + dépendances useEffect corrigés.
-// ============================================================
-
 import { useEffect, useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,7 +38,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 // ✅ FIX 1 : Constantes définies directement ici — indépendantes de distances.ts
-const MAX_ADDRESSES = 50;
+const MAX_ADDRESSES = 10;
 const MAX_ADDRESS_LENGTH = 300;
 
 // Textes du placeholder en français + traductions fréquentes
