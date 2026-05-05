@@ -508,7 +508,7 @@ useEffect(() => {
           </div>
         </TabsContent>
 
-        <TabsContent value="bulk" className="mt-8 space-y-2">
+        <TabsContent value="bulk" className="mt-8 space-y-2 z-50">
           <Textarea
             placeholder={"Une adresse par ligne :\n10 rue de la Paix, Paris\nTour Eiffel, Paris"}
             value={bulk}
