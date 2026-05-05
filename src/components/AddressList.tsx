@@ -508,7 +508,25 @@ useEffect(() => {
           </div>
         </TabsContent>
 
-        
+        <TabsContent value="bulk" className="mt-8 space-y-2 z-50">
+          <Textarea
+            placeholder={"Une adresse par ligne :\n10 rue de la Paix, Paris\nTour Eiffel, Paris"}
+            value={bulk}
+            onChange={(e) => setBulk(e.target.value)}
+            rows={5}
+            onPointerDown={(e) => e.stopPropagation()}
+            className="rounded-2xl h-24 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 z-50"
+          />
+          <div className="w-full mt-6">
+            <Button 
+              onClick={addBulk} 
+              disabled={!bulk.trim()} 
+              className="w-full h-12 mt-6 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-[0_8px_20px_rgba(249,115,22,0.3)] hover:shadow-[0_10px_25px_rgba(249,115,22,0.4)] dark:shadow-[0_8px_20px_rgba(249,115,22,0.15)] rounded-xl font-black uppercase tracking-widest text-[11px] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0"
+            >
+              <ListPlus className="h-4 w-4 mr-2" /> Ajouter toutes les lignes
+            </Button>
+          </div>
+        </TabsContent>
       </Tabs>
 
       {addresses.length > 0 && (
