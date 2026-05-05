@@ -22,3 +22,21 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# 🔒 SECURITY: Never commit SSL certificates or private keys
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+localhost+*
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Build artifacts
+coverage/
+.nyc_output/

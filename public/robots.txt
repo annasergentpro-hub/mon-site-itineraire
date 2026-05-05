@@ -1,3 +1,4 @@
+# Robots autorisés (indexation SEO normale)
 User-agent: Googlebot
 Allow: /
 
@@ -10,5 +11,23 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
+# Bots génériques autorisés (crawl léger)
 User-agent: *
 Allow: /
+Crawl-delay: 10
+
+# Bloquer les scrapers connus et bots malveillants
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+User-agent: BLEXBot
+Disallow: /

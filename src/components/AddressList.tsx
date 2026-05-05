@@ -1,4 +1,10 @@
-import { useEffect, useState, useRef } from "react";
+// ============================================================
+// AddressList.tsx — Version sécurisée et corrigée
+// Corrections : limite max adresses, validation longueur,
+// fix dépendances useEffect (stale closure), import MAX_ADDRESSES.
+// ============================================================
+
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,9 +24,8 @@ import {
 } from "lucide-react";
 import { AddressAutocomplete } from "./AddressAutocomplete";
 import { cn } from "@/lib/utils";
-import { geocodeAddress } from "@/lib/distances";
+import { geocodeAddress, MAX_ADDRESSES, MAX_ADDRESS_LENGTH } from "@/lib/distances";
 
-// --- IMPORTS DND-KIT ---
 import {
   DndContext,
   closestCenter,
@@ -43,8 +48,6 @@ interface AddressListProps {
   onValidationChange?: (isValidating: boolean, invalidAddresses: Set<string>) => void;
 }
 
-// --- COMPOSANT ENFANT SORTABLE ---
-// Ce composant représente UNE ligne de la liste, gérée par dnd-kit
 const SortableAddress = ({
   id,
   addr,
@@ -76,19 +79,13 @@ const SortableAddress = ({
   remove: (i: number) => void;
   totalAddresses: number;
 }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id }); // ID stable unique (pas l'adresse, pour éviter collisions)
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    zIndex: isDragging ? 50 : 1, // Passe au dessus pendant le drag
+    zIndex: isDragging ? 50 : 1,
   };
 
   return (
@@ -96,14 +93,22 @@ const SortableAddress = ({
       <li
         className={cn(
           "group flex flex-col gap-1 rounded-2xl border px-3 py-3 transition-colors duration-200",
-          isDragging && "border-orange-500 bg-orange-50 dark:bg-orange-900/20 shadow-lg scale-[1.02] opacity-90",
-          !isDragging && isValidatingThis && "border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-900/40 opacity-60",
-          !isDragging && isInvalid && !isValidatingThis && "border-red-200 bg-red-50/50 dark:bg-red-950/20 dark:border-red-900/40",
-          !isDragging && !isInvalid && !isValidatingThis && "border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40"
+          isDragging &&
+            "border-orange-500 bg-orange-50 dark:bg-orange-900/20 shadow-lg scale-[1.02] opacity-90",
+          !isDragging &&
+            isValidatingThis &&
+            "border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-900/40 opacity-60",
+          !isDragging &&
+            isInvalid &&
+            !isValidatingThis &&
+            "border-red-200 bg-red-50/50 dark:bg-red-950/20 dark:border-red-900/40",
+          !isDragging &&
+            !isInvalid &&
+            !isValidatingThis &&
+            "border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40",
         )}
       >
         <div className="flex items-center gap-3">
-          {/* POIGNÉE DE DRAG : on attache les attributes et listeners ICI */}
           <div
             {...attributes}
             {...listeners}
@@ -118,8 +123,8 @@ const SortableAddress = ({
               isValidatingThis
                 ? "bg-blue-500 border-blue-400 text-white animate-pulse"
                 : isInvalid
-                ? "bg-red-500 border-red-400 text-white"
-                : "bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-300"
+                  ? "bg-red-500 border-red-400 text-white"
+                  : "bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-300",
             )}
           >
             {isValidatingThis ? "..." : i + 1}
@@ -135,6 +140,7 @@ const SortableAddress = ({
                   if (e.key === "Escape") cancelEdit();
                 }}
                 autoFocus
+                maxLength={MAX_ADDRESS_LENGTH}
                 className="h-9 text-sm rounded-xl border-orange-300 focus:ring-orange-500 dark:border-orange-500/50 dark:focus:ring-orange-400 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
               />
               <button
@@ -151,49 +157,44 @@ const SortableAddress = ({
               </button>
             </div>
           ) : (
-  // 1. On enveloppe l'adresse et les boutons dans un conteneur flex
-  <div className="flex-1 flex items-center min-w-0 overflow-hidden">
-    
-    {/* 2. L'adresse : flex-1 lui permet de prendre tout l'espace */}
-    <span
-      className="flex-1 text-sm font-semibold text-slate-700 dark:text-slate-200 truncate cursor-default min-w-0"
-      title={addr}
-    >
-      {addr}
-    </span>
-
-    {/* 3. LES BOUTONS : On remplace 'opacity-0' par 'hidden' et 'group-hover:flex' */}
-    <div className="hidden group-hover:flex items-center gap-1 shrink-0 ml-2 animate-in fade-in slide-in-from-right-2 duration-200">
-      <button
-        onClick={() => move(i, i - 1)}
-        disabled={i === 0}
-        className="p-1.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-md disabled:opacity-30 transition-colors"
-      >
-        <ArrowUp className="h-4 w-4" />
-      </button>
-      <button
-        onClick={() => move(i, i + 1)}
-        disabled={i === totalAddresses - 1}
-        className="p-1.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-md disabled:opacity-30 transition-colors"
-      >
-        <ArrowDown className="h-4 w-4" />
-      </button>
-      <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1" />
-      <button
-        onClick={() => startEdit(i)}
-        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md transition-colors"
-      >
-        <Pencil className="h-3.5 w-3.5" />
-      </button>
-      <button
-        onClick={() => remove(i)}
-        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors"
-      >
-        <Trash2 className="h-4 w-4" />
-      </button>
-    </div>
-  </div>
-)}
+            <div className="flex-1 flex items-center min-w-0 overflow-hidden">
+              <span
+                className="flex-1 text-sm font-semibold text-slate-700 dark:text-slate-200 truncate cursor-default min-w-0"
+                title={addr}
+              >
+                {addr}
+              </span>
+              <div className="hidden group-hover:flex items-center gap-1 shrink-0 ml-2 animate-in fade-in slide-in-from-right-2 duration-200">
+                <button
+                  onClick={() => move(i, i - 1)}
+                  disabled={i === 0}
+                  className="p-1.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-md disabled:opacity-30 transition-colors"
+                >
+                  <ArrowUp className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => move(i, i + 1)}
+                  disabled={i === totalAddresses - 1}
+                  className="p-1.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-md disabled:opacity-30 transition-colors"
+                >
+                  <ArrowDown className="h-4 w-4" />
+                </button>
+                <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1" />
+                <button
+                  onClick={() => startEdit(i)}
+                  className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md transition-colors"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => remove(i)}
+                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {isValidatingThis && (
@@ -218,181 +219,173 @@ const SortableAddress = ({
   );
 };
 
-
 // --- COMPOSANT PRINCIPAL ---
-export const AddressList = ({ 
-  addresses, 
+export const AddressList = ({
+  addresses,
   onChange,
-  onValidationChange
+  onValidationChange,
 }: AddressListProps) => {
   const [single, setSingle] = useState("");
   const [bulk, setBulk] = useState("");
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [editValue, setEditValue] = useState("");
-  
+
   const [invalidAddresses, setInvalidAddresses] = useState<Set<string>>(new Set());
   const [isValidating, setIsValidating] = useState(false);
   const validationIdRef = useRef(0);
   const [validatingAddresses, setValidatingAddresses] = useState<Set<string>>(new Set());
 
-  // IDs stables uniques pour le drag-and-drop (évite les collisions si 2 adresses identiques
-  // ou si une adresse change pendant l'édition)
   const idCounterRef = useRef(0);
-  const [ids, setIds] = useState<string[]>(() => addresses.map(() => `addr-${idCounterRef.current++}`));
+  const [ids, setIds] = useState<string[]>(() =>
+    addresses.map(() => `addr-${idCounterRef.current++}`),
+  );
 
-  // Synchronise les ids avec la longueur du tableau d'adresses (ajout/suppression)
+  const validationCacheRef = useRef<Record<string, boolean>>({});
+  const prevAddressesRef = useRef<string[]>([]);
+
+  // Synchronise les ids
   useEffect(() => {
     setIds((prev) => {
       if (prev.length === addresses.length) return prev;
       if (prev.length < addresses.length) {
-        const added = Array.from({ length: addresses.length - prev.length }, () => `addr-${idCounterRef.current++}`);
+        const added = Array.from(
+          { length: addresses.length - prev.length },
+          () => `addr-${idCounterRef.current++}`,
+        );
         return [...prev, ...added];
       }
       return prev.slice(0, addresses.length);
     });
   }, [addresses.length]);
 
-  // Senseurs pour dnd-kit (évite que le clic normal ne déclenche le drag)
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8, // Il faut bouger de 8px pour déclencher le glissement
-      },
-    })
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
 
+  // 🔒 FIX : useCallback pour stabiliser la référence et éviter les dépendances manquantes
+  const validateAddresses = useCallback(async (currentAddresses: string[]) => {
+    if (currentAddresses.length === 0) {
+      setIsValidating(false);
+      setInvalidAddresses(new Set());
+      onValidationChange?.(false, new Set());
+      return;
+    }
+
+    const addressesToTest = currentAddresses.filter(
+      (addr) => validationCacheRef.current[addr] === undefined,
+    );
+
+    if (addressesToTest.length === 0) {
+      const newInvalid = new Set<string>();
+      currentAddresses.forEach((addr) => {
+        if (validationCacheRef.current[addr] === false) newInvalid.add(addr);
+      });
+      setInvalidAddresses(newInvalid);
+      onValidationChange?.(false, newInvalid);
+      return;
+    }
+
+    const validationId = ++validationIdRef.current;
+    setIsValidating(true);
+    setValidatingAddresses(new Set(addressesToTest));
+
+    // 🔒 FIX : Capture la valeur courante d'invalidAddresses dans le closure
+    const currentInvalid = new Set(
+      currentAddresses.filter((a) => validationCacheRef.current[a] === false),
+    );
+    onValidationChange?.(true, currentInvalid);
+
+    for (const addr of addressesToTest) {
+      if (validationId !== validationIdRef.current) return;
+
+      try {
+        const res = await geocodeAddress(addr);
+        validationCacheRef.current[addr] = !!res;
+      } catch {
+        validationCacheRef.current[addr] = false;
+      }
+
+      setValidatingAddresses((prev) => {
+        const next = new Set(prev);
+        next.delete(addr);
+        return next;
+      });
+
+      setInvalidAddresses(() => {
+        const next = new Set<string>();
+        currentAddresses.forEach((a) => {
+          if (validationCacheRef.current[a] === false) next.add(a);
+        });
+        return next;
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    }
+
+    if (validationId === validationIdRef.current) {
+      setIsValidating(false);
+      const finalInvalid = new Set<string>();
+      currentAddresses.forEach((a) => {
+        if (validationCacheRef.current[a] === false) finalInvalid.add(a);
+      });
+      onValidationChange?.(false, finalInvalid);
+    }
+  }, [onValidationChange]); // 🔒 FIX : dépendance correcte
+
+  // 🔒 FIX : useEffect avec dépendances correctes
+  useEffect(() => {
+    const hasNewOrModified = addresses.some(
+      (addr) => !prevAddressesRef.current.includes(addr),
+    );
+
+    if (hasNewOrModified || prevAddressesRef.current.length === 0) {
+      validateAddresses(addresses);
+    } else {
+      const newInvalid = new Set<string>();
+      addresses.forEach((a) => {
+        if (validationCacheRef.current[a] === false) newInvalid.add(a);
+      });
+      setInvalidAddresses(newInvalid);
+      onValidationChange?.(false, newInvalid);
+    }
+
+    prevAddressesRef.current = addresses;
+  }, [addresses, validateAddresses, onValidationChange]);
+
+  // 🔒 FIX : Vérifie la limite avant d'ajouter
   const addOne = () => {
     const v = single.trim();
     if (!v) return;
+    if (v.length > MAX_ADDRESS_LENGTH) return;
+    if (addresses.length >= MAX_ADDRESSES) return;
     onChange([...addresses, v]);
     setSingle("");
   };
 
+  // 🔒 FIX : Limite le bulk import
   const addBulk = () => {
     const lines = bulk
       .split("\n")
       .map((l) => l.trim())
-      .filter(Boolean);
+      .filter((l) => l.length > 0 && l.length <= MAX_ADDRESS_LENGTH);
+
     if (!lines.length) return;
-    onChange([...addresses, ...lines]);
+
+    const available = MAX_ADDRESSES - addresses.length;
+    const toAdd = lines.slice(0, Math.max(0, available));
+    if (!toAdd.length) return;
+
+    onChange([...addresses, ...toAdd]);
     setBulk("");
   };
 
   const remove = (i: number) => {
     const removedAddr = addresses[i];
-    // Nettoyage du cache de validation
     delete validationCacheRef.current[removedAddr];
     onChange(addresses.filter((_, idx) => idx !== i));
   };
 
-  // ... à l'intérieur de AddressList ...
-
-// ... à l'intérieur du composant principal AddressList ...
-
-// On crée un cache pour stocker le statut des adresses (true = valide, false = invalide)
-const validationCacheRef = useRef<Record<string, boolean>>({});
-
-const validateAddresses = async (currentAddresses: string[]) => {
-  if (currentAddresses.length === 0) {
-    setIsValidating(false);
-    onValidationChange?.(false, new Set());
-    return;
-  }
-
-  // Identifier les adresses qui n'ont jamais été testées
-  const addressesToTest = currentAddresses.filter(
-    (addr) => validationCacheRef.current[addr] === undefined
-  );
-
-  // Si toutes les adresses sont déjà connues, on met juste à jour l'état global
-  if (addressesToTest.length === 0) {
-    const newInvalid = new Set<string>();
-    currentAddresses.forEach(addr => {
-      if (validationCacheRef.current[addr] === false) newInvalid.add(addr);
-    });
-    setInvalidAddresses(newInvalid);
-    onValidationChange?.(false, newInvalid);
-    return;
-  }
-
-  const validationId = ++validationIdRef.current;
-  setIsValidating(true);
-  onValidationChange?.(true, invalidAddresses); 
-
-  // On ne marque comme "en cours" que celles qu'on teste vraiment
-  setValidatingAddresses(new Set(addressesToTest));
-
-  for (const addr of addressesToTest) {
-    if (validationId !== validationIdRef.current) return;
-    
-    try {
-      const res = await geocodeAddress(addr);
-      const isValid = !!res;
-      // On mémorise le résultat
-      validationCacheRef.current[addr] = isValid;
-    } catch (e) {
-      validationCacheRef.current[addr] = false;
-    }
-    
-    // Mise à jour de l'UI de chargement
-    setValidatingAddresses((prev) => {
-      const next = new Set(prev);
-      next.delete(addr);
-      return next;
-    });
-    
-    // Mise à jour des adresses invalides basée sur le cache
-    setInvalidAddresses((prev) => {
-      const next = new Set();
-      currentAddresses.forEach(a => {
-        if (validationCacheRef.current[a] === false) next.add(a);
-      });
-      return next as Set<string>;
-    });
-
-    await new Promise((resolve) => setTimeout(resolve, 300)); 
-  }
-
-  if (validationId === validationIdRef.current) {
-    setIsValidating(false);
-    const finalInvalid = new Set<string>();
-    currentAddresses.forEach(a => {
-      if (validationCacheRef.current[a] === false) finalInvalid.add(a);
-    });
-    onValidationChange?.(false, finalInvalid); 
-  }
-};
-
-// --- MODIFICATION DU USEEFFECT ---
-// Pour éviter de déclencher la validation lors d'un simple déplacement (DND),
-// nous comparons le contenu de la liste plutôt que sa structure.
-const prevAddressesRef = useRef<string[]>([]);
-
-useEffect(() => {
-  // On vérifie si une adresse a été ajoutée ou modifiée
-  // On ignore si c'est juste un changement d'ordre
-  const hasNewOrModified = addresses.some(addr => !prevAddressesRef.current.includes(addr));
-  
-  // On déclenche la validation seulement si le contenu change (ajout/modif)
-  // ou si c'est le premier chargement
-  if (hasNewOrModified || prevAddressesRef.current.length === 0) {
-    validateAddresses(addresses);
-  } else {
-    // Si c'est juste un déplacement ou une suppression, 
-    // on recalcule juste l'état des erreurs sans appeler l'API
-    const newInvalid = new Set<string>();
-    addresses.forEach(a => {
-      if (validationCacheRef.current[a] === false) newInvalid.add(a);
-    });
-    setInvalidAddresses(newInvalid);
-    onValidationChange?.(false, newInvalid);
-  }
-
-  prevAddressesRef.current = addresses;
-}, [addresses]);
-
   const clearAll = () => {
-    // Nettoyage complet du cache de validation
     validationCacheRef.current = {};
     onChange([]);
     setInvalidAddresses(new Set());
@@ -418,20 +411,14 @@ useEffect(() => {
 
   const saveEdit = () => {
     if (editingIdx === null) return;
-    
     const oldAddr = addresses[editingIdx];
     const newAddr = editValue.trim();
-    
-    // Supprime l'ancienne adresse du cache
     delete validationCacheRef.current[oldAddr];
-    
-    // Supprime aussi de invalidAddresses
     setInvalidAddresses((prev) => {
       const next = new Set(prev);
       next.delete(oldAddr);
       return next;
     });
-    
     if (!newAddr) {
       remove(editingIdx);
     } else {
@@ -442,7 +429,6 @@ useEffect(() => {
     cancelEdit();
   };
 
-  // Gestionnaire de fin de glisser-déposer (utilise les IDs stables)
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
@@ -454,6 +440,8 @@ useEffect(() => {
     }
   };
 
+  const atLimit = addresses.length >= MAX_ADDRESSES;
+
   return (
     <div className="rounded-[25px] bg-white dark:bg-neutral-900/60 p-5 sm:p-5 shadow-card px-auto">
       <div className="flex items-center justify-between mb-4">
@@ -464,13 +452,21 @@ useEffect(() => {
           <div>
             <h2 className="font-bold text-slate-900 dark:text-slate-100">Destinations</h2>
             <p className="text-[10px] text-slate-400 uppercase tracking-widest font-black">
-              {addresses.length} Arrêts
+              {addresses.length}/{MAX_ADDRESSES} Arrêts
               {isValidating && " • Validation en cours..."}
+              {atLimit && (
+                <span className="text-orange-500 ml-1">• Limite atteinte</span>
+              )}
             </p>
           </div>
         </div>
         {addresses.length > 0 && (
-          <Button variant="ghost" size="sm" onClick={clearAll} className="text-muted-foreground hover:bg-red-500">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearAll}
+            className="text-muted-foreground hover:bg-red-500"
+          >
             <Trash2 className="h-3.5 w-3.5" /> Vider
           </Button>
         )}
@@ -478,10 +474,16 @@ useEffect(() => {
 
       <Tabs defaultValue="single">
         <TabsList className="bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl w-full h-auto grid grid-cols-2 gap-1 border border-slate-200/50 dark:border-slate-700/50">
-          <TabsTrigger value="single" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white dark:data-[state=active]:bg-black data-[state=active]:text-orange-600 dark:data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-bold flex items-center justify-center gap-2">
+          <TabsTrigger
+            value="single"
+            className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white dark:data-[state=active]:bg-black data-[state=active]:text-orange-600 dark:data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-bold flex items-center justify-center gap-2"
+          >
             <Pen className="h-4 w-4" /> Manuel
           </TabsTrigger>
-          <TabsTrigger value="bulk" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white dark:data-[state=active]:bg-black data-[state=active]:text-orange-600 dark:data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-bold flex items-center justify-center gap-2">
+          <TabsTrigger
+            value="bulk"
+            className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white dark:data-[state=active]:bg-black data-[state=active]:text-orange-600 dark:data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-bold flex items-center justify-center gap-2"
+          >
             <ListPlus className="h-4 w-4" /> En bloc
           </TabsTrigger>
         </TabsList>
@@ -495,17 +497,28 @@ useEffect(() => {
               value={single}
               onChange={setSingle}
               onSelect={(s) => {
+                if (addresses.length >= MAX_ADDRESSES) return;
                 onChange([...addresses, s.label]);
                 setSingle("");
               }}
               onSubmit={addOne}
               placeholder="Ajouter une ville ou adresse..."
-              className="rounded-xl h-12 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus:text-black" 
+              className="rounded-xl h-12 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus:text-black"
             />
-            <Button onClick={addOne} disabled={!single.trim()} className="h-12 w-12 rounded-xl ">
+            <Button
+              onClick={addOne}
+              disabled={!single.trim() || atLimit}
+              className="h-12 w-12 rounded-xl"
+            >
               <MapPinPlus className="h-12 w-12 text-white" />
             </Button>
           </div>
+          {/* 🔒 Avertissement limite */}
+          {atLimit && (
+            <p className="text-[10px] text-orange-500 font-bold mt-2 ml-1">
+              ⚠ Limite de {MAX_ADDRESSES} adresses atteinte.
+            </p>
+          )}
         </TabsContent>
 
         <TabsContent value="bulk" className="mt-8 space-y-2 z-50">
@@ -517,10 +530,15 @@ useEffect(() => {
             onPointerDown={(e) => e.stopPropagation()}
             className="rounded-2xl h-24 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 z-50"
           />
+          {atLimit && (
+            <p className="text-[10px] text-orange-500 font-bold ml-1">
+              ⚠ Limite de {MAX_ADDRESSES} adresses atteinte.
+            </p>
+          )}
           <div className="w-full mt-6">
-            <Button 
-              onClick={addBulk} 
-              disabled={!bulk.trim()} 
+            <Button
+              onClick={addBulk}
+              disabled={!bulk.trim() || atLimit}
               className="w-full h-12 mt-6 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-[0_8px_20px_rgba(249,115,22,0.3)] hover:shadow-[0_10px_25px_rgba(249,115,22,0.4)] dark:shadow-[0_8px_20px_rgba(249,115,22,0.15)] rounded-xl font-black uppercase tracking-widest text-[11px] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0"
             >
               <ListPlus className="h-4 w-4 mr-2" /> Ajouter toutes les lignes
@@ -536,10 +554,7 @@ useEffect(() => {
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
           >
-            <SortableContext
-              items={ids}
-              strategy={verticalListSortingStrategy}
-            >
+            <SortableContext items={ids} strategy={verticalListSortingStrategy}>
               <ul className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar pb-4">
                 {addresses.map((addr, i) => {
                   const id = ids[i] ?? `addr-fallback-${i}`;
