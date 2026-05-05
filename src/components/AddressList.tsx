@@ -239,7 +239,21 @@ const SortableAddress = ({
     </div>
   );
 };
-
+const LimitReachedAlert = ({ max }: { max: number }) => (
+  <div className="mt-4 flex items-start gap-3 rounded-2xl border border-orange-200/50 bg-orange-50/50 p-4 dark:border-orange-900/30 dark:bg-orange-900/10 animate-in fade-in slide-in-from-top-2 duration-500">
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-500 shadow-lg shadow-orange-500/20">
+      <AlertCircle className="h-5 w-5 text-white" />
+    </div>
+    <div className="space-y-1">
+      <p className="text-sm font-bold text-orange-800 dark:text-orange-300">
+        Capacité maximale atteinte
+      </p>
+      <p className="text-[11px] leading-relaxed text-orange-700/80 dark:text-orange-400/80 uppercase tracking-wide font-medium">
+        Vous avez atteint la limite de **{max} adresses**. Veuillez en supprimer pour en ajouter de nouvelles.
+      </p>
+    </div>
+  </div>
+);
 // --- COMPOSANT PRINCIPAL ---
 export const AddressList = ({
   addresses,
@@ -266,21 +280,7 @@ export const AddressList = ({
 
   const validationCacheRef = useRef<Record<string, boolean>>({});
   const prevAddressesRef = useRef<string[]>([]);
-  const LimitReachedAlert = ({ max }: { max: number }) => (
-  <div className="mt-4 flex items-start gap-3 rounded-2xl border border-orange-200/50 bg-orange-50/50 p-4 dark:border-orange-900/30 dark:bg-orange-900/10 animate-in fade-in slide-in-from-top-2 duration-500 z-[999]">
-    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-500 shadow-lg shadow-orange-500/20">
-      <AlertCircle className="h-5 w-5 text-white" />
-    </div>
-    <div className="space-y-1">
-      <p className="text-sm font-bold text-orange-800 dark:text-orange-300">
-        Capacité maximale atteinte
-      </p>
-      <p className="text-[11px] leading-relaxed text-orange-700/80 dark:text-orange-400/80 uppercase tracking-wide font-medium">
-        Vous avez atteint la limite de **{max} adresses**. Veuillez en supprimer pour en ajouter de nouvelles.
-      </p>
-    </div>
-  </div>
-);
+  
   // ✅ FIX 2 : Placeholder dynamique selon la langue — mis à jour à chaque changement de langue.
   // On prend la langue courante, ou "fr" par défaut si non trouvée dans la table.
   const bulkPlaceholder = BULK_PLACEHOLDERS[lang] ?? BULK_PLACEHOLDERS["fr"];
@@ -536,7 +536,7 @@ export const AddressList = ({
           <p className="text-[8px] sm:text-[10px] lg:text-[10px] font-black text-indigo-500/80 dark:text-indigo-400/80 uppercase tracking-widest ml-1">
             Choisissez une suggestion dans la liste pour garantir la reconnaissance.
           </p>
-          <div className="flex gap-2 items-start mt-2 relative z-[9999]">
+          <div className="flex gap-2 items-start mt-2 relative z-[50]">
             <AddressAutocomplete
               value={single}
               onChange={setSingle}
@@ -560,7 +560,7 @@ export const AddressList = ({
           {atLimit && <LimitReachedAlert max={MAX_ADDRESSES} />}
         </TabsContent>
 
-        <TabsContent value="bulk" className="mt-8 space-y-2 z-[9999]">
+        <TabsContent value="bulk" className="mt-8 space-y-2 z-50">
           {/* ✅ FIX 2 : placeholder mis à jour selon la langue via bulkPlaceholder */}
           <Textarea
             placeholder={bulkPlaceholder}
