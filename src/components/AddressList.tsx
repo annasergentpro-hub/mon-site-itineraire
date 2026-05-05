@@ -514,7 +514,7 @@ useEffect(() => {
             value={bulk}
             onChange={(e) => setBulk(e.target.value)}
             rows={5}
-            className="rounded-2xl sticky h-24 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800"
+            className="rounded-2xl sticky h-24 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 z-50"
           />
           <div className="w-full mt-6">
             <Button 
