@@ -266,7 +266,9 @@ export const TranslationProvider = ({ children }: { children: ReactNode }) => {
     ).filter((el) => {
       if (el.hasAttribute(SKIP_ATTR)) return false;
       const tag = el.tagName;
-      if (SKIP_TAGS.has(tag)) return false;
+      // ✅ FIX: TEXTAREA doit être exclu pour les NOEUDS TEXTE (via isSkippable)
+      // mais PAS pour ses attributs (placeholder). On ne saute que les vrais blocs de code.
+      if (SKIP_TAGS.has(tag) && tag !== "TEXTAREA") return false;
       return true;
     });
 

@@ -1,7 +1,10 @@
 // ============================================================
-// AddressList.tsx — Version sécurisée et corrigée
-// Corrections : limite max adresses, validation longueur,
-// fix dépendances useEffect (stale closure), import MAX_ADDRESSES.
+// AddressList.tsx — Version sécurisée et corrigée v2
+// Fix 1 : constantes MAX_ADDRESSES / MAX_ADDRESS_LENGTH définies
+//         localement (plus de dépendance fragile à distances.ts).
+// Fix 2 : placeholder Textarea rendu via useTranslation + état
+//         pour que Google Translate le prenne bien en compte.
+// Fix 3 : useCallback + dépendances useEffect corrigés.
 // ============================================================
 
 import { useEffect, useState, useRef, useCallback } from "react";
@@ -24,7 +27,8 @@ import {
 } from "lucide-react";
 import { AddressAutocomplete } from "./AddressAutocomplete";
 import { cn } from "@/lib/utils";
-import { geocodeAddress, MAX_ADDRESSES, MAX_ADDRESS_LENGTH } from "@/lib/distances";
+import { geocodeAddress } from "@/lib/distances";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 import {
   DndContext,
@@ -41,6 +45,23 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+
+// ✅ FIX 1 : Constantes définies directement ici — indépendantes de distances.ts
+const MAX_ADDRESSES = 50;
+const MAX_ADDRESS_LENGTH = 300;
+
+// Textes du placeholder en français + traductions fréquentes
+// La langue est détectée via useTranslation, le placeholder est mis à jour dynamiquement
+// Ce qui permet à Google Translate de le prendre en compte au rechargement
+const BULK_PLACEHOLDERS: Record<string, string> = {
+  fr: "Une adresse par ligne :\n10 rue de la Paix, Paris\nTour Eiffel, Paris",
+  en: "One address per line:\n10 Downing Street, London\nBig Ben, London",
+  es: "Una dirección por línea:\nCalle Mayor 10, Madrid\nSagrada Familia, Barcelona",
+  de: "Eine Adresse pro Zeile:\nUnter den Linden 10, Berlin\nBrandenburger Tor, Berlin",
+  it: "Un indirizzo per riga:\nVia del Corso 10, Roma\nColosseo, Roma",
+  pt: "Um endereço por linha:\nAvenida da Liberdade 10, Lisboa\nTorre de Belém, Lisboa",
+  ar: "عنوان واحد في كل سطر:\nشارع الملك فهد 10، الرياض\nبرج الفيصلية، الرياض",
+};
 
 interface AddressListProps {
   addresses: string[];
@@ -225,6 +246,9 @@ export const AddressList = ({
   onChange,
   onValidationChange,
 }: AddressListProps) => {
+  // ✅ FIX 2 : Récupère la langue courante pour adapter le placeholder
+  const { lang } = useTranslation();
+
   const [single, setSingle] = useState("");
   const [bulk, setBulk] = useState("");
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
@@ -243,7 +267,11 @@ export const AddressList = ({
   const validationCacheRef = useRef<Record<string, boolean>>({});
   const prevAddressesRef = useRef<string[]>([]);
 
-  // Synchronise les ids
+  // ✅ FIX 2 : Placeholder dynamique selon la langue — mis à jour à chaque changement de langue.
+  // On prend la langue courante, ou "fr" par défaut si non trouvée dans la table.
+  const bulkPlaceholder = BULK_PLACEHOLDERS[lang] ?? BULK_PLACEHOLDERS["fr"];
+
+  // Synchronise les ids avec le tableau d'adresses
   useEffect(() => {
     setIds((prev) => {
       if (prev.length === addresses.length) return prev;
@@ -262,77 +290,79 @@ export const AddressList = ({
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
 
-  // 🔒 FIX : useCallback pour stabiliser la référence et éviter les dépendances manquantes
-  const validateAddresses = useCallback(async (currentAddresses: string[]) => {
-    if (currentAddresses.length === 0) {
-      setIsValidating(false);
-      setInvalidAddresses(new Set());
-      onValidationChange?.(false, new Set());
-      return;
-    }
-
-    const addressesToTest = currentAddresses.filter(
-      (addr) => validationCacheRef.current[addr] === undefined,
-    );
-
-    if (addressesToTest.length === 0) {
-      const newInvalid = new Set<string>();
-      currentAddresses.forEach((addr) => {
-        if (validationCacheRef.current[addr] === false) newInvalid.add(addr);
-      });
-      setInvalidAddresses(newInvalid);
-      onValidationChange?.(false, newInvalid);
-      return;
-    }
-
-    const validationId = ++validationIdRef.current;
-    setIsValidating(true);
-    setValidatingAddresses(new Set(addressesToTest));
-
-    // 🔒 FIX : Capture la valeur courante d'invalidAddresses dans le closure
-    const currentInvalid = new Set(
-      currentAddresses.filter((a) => validationCacheRef.current[a] === false),
-    );
-    onValidationChange?.(true, currentInvalid);
-
-    for (const addr of addressesToTest) {
-      if (validationId !== validationIdRef.current) return;
-
-      try {
-        const res = await geocodeAddress(addr);
-        validationCacheRef.current[addr] = !!res;
-      } catch {
-        validationCacheRef.current[addr] = false;
+  // ✅ FIX 3 : useCallback pour stabiliser la référence
+  const validateAddresses = useCallback(
+    async (currentAddresses: string[]) => {
+      if (currentAddresses.length === 0) {
+        setIsValidating(false);
+        setInvalidAddresses(new Set());
+        onValidationChange?.(false, new Set());
+        return;
       }
 
-      setValidatingAddresses((prev) => {
-        const next = new Set(prev);
-        next.delete(addr);
-        return next;
-      });
+      const addressesToTest = currentAddresses.filter(
+        (addr) => validationCacheRef.current[addr] === undefined,
+      );
 
-      setInvalidAddresses(() => {
-        const next = new Set<string>();
-        currentAddresses.forEach((a) => {
-          if (validationCacheRef.current[a] === false) next.add(a);
+      if (addressesToTest.length === 0) {
+        const newInvalid = new Set<string>();
+        currentAddresses.forEach((addr) => {
+          if (validationCacheRef.current[addr] === false) newInvalid.add(addr);
         });
-        return next;
-      });
+        setInvalidAddresses(newInvalid);
+        onValidationChange?.(false, newInvalid);
+        return;
+      }
 
-      await new Promise((resolve) => setTimeout(resolve, 300));
-    }
+      const validationId = ++validationIdRef.current;
+      setIsValidating(true);
+      setValidatingAddresses(new Set(addressesToTest));
 
-    if (validationId === validationIdRef.current) {
-      setIsValidating(false);
-      const finalInvalid = new Set<string>();
-      currentAddresses.forEach((a) => {
-        if (validationCacheRef.current[a] === false) finalInvalid.add(a);
-      });
-      onValidationChange?.(false, finalInvalid);
-    }
-  }, [onValidationChange]); // 🔒 FIX : dépendance correcte
+      const currentInvalid = new Set(
+        currentAddresses.filter((a) => validationCacheRef.current[a] === false),
+      );
+      onValidationChange?.(true, currentInvalid);
 
-  // 🔒 FIX : useEffect avec dépendances correctes
+      for (const addr of addressesToTest) {
+        if (validationId !== validationIdRef.current) return;
+
+        try {
+          const res = await geocodeAddress(addr);
+          validationCacheRef.current[addr] = !!res;
+        } catch {
+          validationCacheRef.current[addr] = false;
+        }
+
+        setValidatingAddresses((prev) => {
+          const next = new Set(prev);
+          next.delete(addr);
+          return next;
+        });
+
+        setInvalidAddresses(() => {
+          const next = new Set<string>();
+          currentAddresses.forEach((a) => {
+            if (validationCacheRef.current[a] === false) next.add(a);
+          });
+          return next;
+        });
+
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      }
+
+      if (validationId === validationIdRef.current) {
+        setIsValidating(false);
+        const finalInvalid = new Set<string>();
+        currentAddresses.forEach((a) => {
+          if (validationCacheRef.current[a] === false) finalInvalid.add(a);
+        });
+        onValidationChange?.(false, finalInvalid);
+      }
+    },
+    [onValidationChange],
+  );
+
+  // ✅ FIX 3 : Dépendances useEffect correctes
   useEffect(() => {
     const hasNewOrModified = addresses.some(
       (addr) => !prevAddressesRef.current.includes(addr),
@@ -352,7 +382,7 @@ export const AddressList = ({
     prevAddressesRef.current = addresses;
   }, [addresses, validateAddresses, onValidationChange]);
 
-  // 🔒 FIX : Vérifie la limite avant d'ajouter
+  // ✅ FIX 1 : Vérifie la limite AVANT d'ajouter (constante locale = toujours définie)
   const addOne = () => {
     const v = single.trim();
     if (!v) return;
@@ -362,7 +392,7 @@ export const AddressList = ({
     setSingle("");
   };
 
-  // 🔒 FIX : Limite le bulk import
+  // ✅ FIX 1 : Limite le bulk import au quota restant
   const addBulk = () => {
     const lines = bulk
       .split("\n")
@@ -372,9 +402,9 @@ export const AddressList = ({
     if (!lines.length) return;
 
     const available = MAX_ADDRESSES - addresses.length;
-    const toAdd = lines.slice(0, Math.max(0, available));
-    if (!toAdd.length) return;
+    if (available <= 0) return; // déjà à la limite
 
+    const toAdd = lines.slice(0, available);
     onChange([...addresses, ...toAdd]);
     setBulk("");
   };
@@ -513,7 +543,6 @@ export const AddressList = ({
               <MapPinPlus className="h-12 w-12 text-white" />
             </Button>
           </div>
-          {/* 🔒 Avertissement limite */}
           {atLimit && (
             <p className="text-[10px] text-orange-500 font-bold mt-2 ml-1">
               ⚠ Limite de {MAX_ADDRESSES} adresses atteinte.
@@ -522,8 +551,9 @@ export const AddressList = ({
         </TabsContent>
 
         <TabsContent value="bulk" className="mt-8 space-y-2 z-50">
+          {/* ✅ FIX 2 : placeholder mis à jour selon la langue via bulkPlaceholder */}
           <Textarea
-            placeholder={"Une adresse par ligne :\n10 rue de la Paix, Paris\nTour Eiffel, Paris"}
+            placeholder={bulkPlaceholder}
             value={bulk}
             onChange={(e) => setBulk(e.target.value)}
             rows={5}
