@@ -38,7 +38,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 // ✅ FIX 1 : Constantes définies directement ici — indépendantes de distances.ts
-const MAX_ADDRESSES = 10;
+const MAX_ADDRESSES = 50;
 const MAX_ADDRESS_LENGTH = 300;
 
 // Textes du placeholder en français + traductions fréquentes
