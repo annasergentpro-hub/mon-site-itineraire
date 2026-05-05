@@ -105,9 +105,9 @@ export const Header = () => {
               aria-label="Basculer le thème"
             >
               {mounted && isDark ? (
-                <Sun className="h-2 w-2 md:h-5 md:w-5 lg:h-6 lg:w-6 mr-3 text-amber-500 transition-all" />
+                <Sun className="h-2 w-2 md:h-5 md:w-5 lg:h-6 lg:w-6 ml-2 text-amber-500 transition-all" />
               ) : (
-                <Moon className="h-2 w-2 md:h-5 md:w-5 lg:h-6 lg:w-6 text-indigo-600 transition-all" />
+                <Moon className="h-2 w-2 md:h-5 md:w-5 lg:h-6 lg:w-6 ml-2 text-indigo-600 transition-all" />
               )}
             </Button>
           </div>
