@@ -267,7 +267,7 @@ export const AddressList = ({
   const validationCacheRef = useRef<Record<string, boolean>>({});
   const prevAddressesRef = useRef<string[]>([]);
   const LimitReachedAlert = ({ max }: { max: number }) => (
-  <div className="mt-4 flex items-start gap-3 rounded-2xl border border-orange-200/50 bg-orange-50/50 p-4 dark:border-orange-900/30 dark:bg-orange-900/10 animate-in fade-in slide-in-from-top-2 duration-500">
+  <div className="mt-4 flex items-start gap-3 rounded-2xl border border-orange-200/50 bg-orange-50/50 p-4 dark:border-orange-900/30 dark:bg-orange-900/10 animate-in fade-in slide-in-from-top-2 duration-500 z-50">
     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-500 shadow-lg shadow-orange-500/20">
       <AlertCircle className="h-5 w-5 text-white" />
     </div>
