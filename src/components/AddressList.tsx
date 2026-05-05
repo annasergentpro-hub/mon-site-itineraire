@@ -536,7 +536,7 @@ export const AddressList = ({
           <p className="text-[8px] sm:text-[10px] lg:text-[10px] font-black text-indigo-500/80 dark:text-indigo-400/80 uppercase tracking-widest ml-1">
             Choisissez une suggestion dans la liste pour garantir la reconnaissance.
           </p>
-          <div className="flex gap-2 items-start mt-2 relative z-[50]">
+          <div className="flex gap-2 items-start mt-2 relative z-[9999]">
             <AddressAutocomplete
               value={single}
               onChange={setSingle}
@@ -560,7 +560,7 @@ export const AddressList = ({
           {atLimit && <LimitReachedAlert max={MAX_ADDRESSES} />}
         </TabsContent>
 
-        <TabsContent value="bulk" className="mt-8 space-y-2 z-50">
+        <TabsContent value="bulk" className="mt-8 space-y-2 z-[9999]">
           {/* ✅ FIX 2 : placeholder mis à jour selon la langue via bulkPlaceholder */}
           <Textarea
             placeholder={bulkPlaceholder}
